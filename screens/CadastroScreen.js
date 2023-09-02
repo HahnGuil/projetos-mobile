@@ -1,12 +1,13 @@
 import React, { useState } from 'react';
 import { View, Text, TextInput, Button } from 'react-native';
 
-export default function CadastroScreen() {
+export default function CadastroScreen({navigation}) {
   const [nome, setNome] = useState('');
   const [email, setEmail] = useState('');
   const [celular, setCelular] = useState('');
 
   const handleCadastro = () => {
+    navigation.navigate('Listagem');
     // Aqui você pode adicionar a lógica para enviar os dados do cadastro para algum lugar, como um servidor
     console.log('Nome:', nome);
     console.log('Email:', email);
