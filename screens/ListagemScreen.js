@@ -1,73 +1,93 @@
-import React from 'react';
-import { View, Text, StyleSheet, FlatList, Dimensions, PanResponder } from 'react-native';
+import React, { useState, useEffect } from 'react';
+import { View, Text, FlatList, StyleSheet, Dimensions, TouchableOpacity } from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import { useEffect, useState } from 'react';
+import { useFocusEffect } from '@react-navigation/native';
 
-const ListagemScreen = () => {
+const ListagemScreen = ({ route, navigation }) => {
   const [pessoas, setPessoas] = useState([]);
 
   useEffect(() => {
+    const unsubscribe = navigation.addListener('focus', () => {
+      console.log('Tela anterior foi focada');
+      fetchPessoas();
+    });
+
     const fetchPessoas = async () => {
-      try{
-        // Recuperar as pessoas cadastradas do AsyncStorage
+      try {
         const pessoasAnteriores = await AsyncStorage.getItem('pessoas');
         const pessoas = pessoasAnteriores ? JSON.parse(pessoasAnteriores) : [];
-
+  
         setPessoas(pessoas);
-      }catch(erros){
-        console.log('Erro ao recuperar as pessoas: ', error);
+      } catch (error) {
+        console.log('Erro ao recuperar as pessoas:', error);
       }
     };
-
     fetchPessoas();
   }, []);
 
+  
+
   const handleEditarPessoa = (item) => {
-    Navigation.navigate('Cadastro', {pessoa: item});
+    navigation.navigate('Cadastro', { pessoa: item });
   };
 
   const handleExcluirPessoa = async (item) => {
-    try{
-    const pessoasAnteriores = await AsyncStorage.getItem('pessoas');
-    let pessoas = pessoasAnteriores ? JSON.parse(pessoasAnteriores) : [];
+    try {
+      // Recuperar as pessoas cadastradas do AsyncStorage
+      const pessoasAnteriores = await AsyncStorage.getItem('pessoas');
+      let pessoas = pessoasAnteriores ? JSON.parse(pessoasAnteriores) : [];
 
-    pessoas = pessoas.filter((p) => p.nome !== item.nome);
+      // Remover a pessoa da lista
+      pessoas = pessoas.filter((p) => p.nome !== item.nome);
 
-    await AsyncStorage.setItem('pessoas', JSON.stringify(pessoas));
-    
-    setPessoas(pessoas);
+      // Atualizar as pessoas no AsyncStorage
+      await AsyncStorage.setItem('pessoas', JSON.stringify(pessoas));
 
-  }catch(error){
-    console.log('Erro ao excluir a pessoa', error)
-  }
-}
+      setPessoas(pessoas);
+    } catch (error) {
+      console.log('Erro ao excluir a pessoa:', error);
+    }
+  };
 
   const renderPessoaItem = ({ item }) => (
     <View style={styles.card}>
       <Text style={styles.label}>Nome:</Text>
       <Text style={styles.text}>{item.nome}</Text>
-      <Text style={styles.label}>Celular</Text>
-      <Text style={styles.text}>{item.celular}</Text>
-      <Text style={styles.label}>E-mail</Text>
-      <Text style={styles.text}>{item.email}</Text>
+      <Text style={styles.label}>Telefone:</Text>
+      <Text style={styles.text}>{item.telefone}</Text>
+      <Text style={styles.label}>Endereço:</Text>
+      <Text style={styles.text}>{item.endereco}</Text>
+      <View style={styles.buttonsContainer}>
+        <TouchableOpacity
+          style={[styles.button, styles.editButton]}
+          onPress={() => handleEditarPessoa(item)}
+        >
+          <Text style={styles.buttonText}>Editar</Text>
+        </TouchableOpacity>
+        <TouchableOpacity
+          style={[styles.button, styles.deleteButton]}
+          onPress={() => handleExcluirPessoa(item)}
+        >
+          <Text style={styles.buttonText}>Excluir</Text>
+        </TouchableOpacity>
+      </View>
     </View>
   );
 
   return (
-   <View style={styles.container}>
-    <Text style={styles.title}>Lista de Pessoas Cadastradas</Text>
-    <FlatList
-    data={pessoas}
-    renderItem={renderPessoaItem}
-    keyExtractor={(item, index) => index.toString()}
-    contentContainerStyle={styles.cardList}
-    />
-   </View>
+    <View style={styles.container}>
+      <Text style={styles.title}>Lista de Pessoas Cadastradas:</Text>
+      <FlatList
+        data={pessoas}
+        renderItem={renderPessoaItem}
+        keyExtractor={(item, index) => index.toString()}
+        contentContainerStyle={styles.cardList}
+      />
+    </View>
   );
-
 };
 
-const {width} = Dimensions.get('window');
+const { width } = Dimensions.get('window');
 
 const styles = StyleSheet.create({
   container: {
@@ -102,6 +122,26 @@ const styles = StyleSheet.create({
   },
   text: {
     marginBottom: 10,
+  },
+  buttonsContainer: {
+    flexDirection: 'row',
+    justifyContent: 'flex-end',
+  },
+  button: {
+    paddingVertical: 8,
+    paddingHorizontal: 12,
+    borderRadius: 6,
+    marginLeft: 8,
+  },
+  editButton: {
+    backgroundColor: '#2196F3',
+  },
+  deleteButton: {
+    backgroundColor: '#F44336',
+  },
+  buttonText: {
+    color: '#fff',
+    fontWeight: 'bold',
   },
 });
 
